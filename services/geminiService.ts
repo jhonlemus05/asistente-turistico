@@ -1,9 +1,17 @@
 import { GoogleGenAI } from "@google/genai";
 import { GroundingChunk } from '../types';
 
-// Initialize the Google Gemini AI client
-// This requires the API_KEY to be set in the environment variables
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+let ai: GoogleGenAI | null = null;
+
+// Lazy initialization of the Google Gemini AI client
+function getAiClient() {
+  if (!ai) {
+    // This ensures the API key is read only when the client is first needed,
+    // giving the environment time to inject it.
+    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  }
+  return ai;
+}
 
 const BACKEND_ENDPOINT = 'https://gemini-backend-ca0r.onrender.com/api/chat';
 
@@ -40,7 +48,8 @@ export async function runChat(prompt: string, location: { latitude: number; long
     // --- Step 2: Make a parallel, direct call to Gemini to extract structured place data ---
     let placesInfo: { name: string; city: string; department: string }[] = [];
     try {
-        const geminiResponse = await ai.models.generateContent({
+        const geminiClient = getAiClient(); // Get the initialized client
+        const geminiResponse = await geminiClient.models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: {
