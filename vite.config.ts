@@ -1,10 +1,15 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  define: {
-    'process': 'window.process'
-  }
-})
+  server: {
+    proxy: {
+      "/api": {
+        target: "https://gemini-backend-ca0r.onrender.com",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+});
