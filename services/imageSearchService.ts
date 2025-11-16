@@ -1,6 +1,6 @@
 // services/imageSearchService.ts
 
-export async function searchImage(query: string): Promise<string | null> {
+export async function searchImageForPlace(query: string): Promise<string | null> {
   try {
     const url = `https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&pithumbsize=600&origin=*&titles=${encodeURIComponent(query)}`;
 
