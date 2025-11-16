@@ -61,6 +61,33 @@ async function reformatText(textToFormat: string): Promise<string> {
     }
 }
 
+/**
+ * Extracts structured place data from text using Gemini.
+ * @param textToAnalyze The text to extract places from.
+ * @returns A promise that resolves to an array of places.
+ */
+async function extractPlaces(textToAnalyze: string): Promise<{ name: string; city: string; department: string }[]> {
+    if (!textToAnalyze.trim()) return [];
+    try {
+        const geminiClient = getAiClient();
+        const geminiResponse = await geminiClient.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: textToAnalyze,
+            config: { systemInstruction: placeExtractionInstruction }
+        });
+        const rawJson = geminiResponse.text.trim();
+        const cleanedJson = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
+        if (cleanedJson) {
+            return JSON.parse(cleanedJson);
+        }
+        return [];
+    } catch (e) {
+        console.error("Could not extract place data from Gemini:", e);
+        // Throw an error to be caught by Promise.allSettled
+        throw new Error("Error al extraer datos de lugares. Revisa la clave de API en el entorno de despliegue.");
+    }
+}
+
 
 export async function runChat(prompt: string, location: { latitude: number; longitude: number } | null) {
   try {
@@ -76,56 +103,44 @@ export async function runChat(prompt: string, location: { latitude: number; long
     const backendData = await backendResponse.json();
     const rawResponseText = backendData.reply || "No he recibido una respuesta válida de mi servidor.";
 
-    // --- Step 2 (Parallel): Reformat text AND extract places from the backend's response ---
-    const reformatPromise = reformatText(rawResponseText);
-
-    const placesPromise = (async () => {
-      let placesInfo: { name: string; city: string; department: string }[] = [];
-      if (!rawResponseText.trim()) return placesInfo;
-      try {
-          const geminiClient = getAiClient();
-          const geminiResponse = await geminiClient.models.generateContent({
-              model: "gemini-2.5-flash",
-              contents: rawResponseText, // CRITICAL CHANGE: Use backend response text
-              config: { systemInstruction: placeExtractionInstruction }
-          });
-        const rawJson = geminiResponse.text.trim();
-        const cleanedJson = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
-        if (cleanedJson) {
-          placesInfo = JSON.parse(cleanedJson);
-        }
-      } catch (e) {
-        console.error("Could not extract place data from Gemini:", e);
-      }
-      return placesInfo;
-    })();
-
-    // --- Step 3: Await the parallel tasks ---
-    const [responseText, placesInfo] = await Promise.all([
-        reformatPromise,
-        placesPromise,
+    // --- Step 2: Concurrently reformat text AND extract places ---
+    const [reformatResult, placesResult] = await Promise.allSettled([
+        reformatText(rawResponseText),
+        extractPlaces(rawResponseText),
     ]);
 
-    // --- Step 4: Orchestrate visual and interactive content ---
+    // Use the reformatted text if successful, otherwise fallback to the raw text
+    const responseText = reformatResult.status === 'fulfilled' ? reformatResult.value : rawResponseText;
+    
+    // Check if place extraction failed and prepare a user-facing warning
+    let warningMessage = '';
+    if (placesResult.status === 'rejected') {
+        warningMessage = `<br><br><small><em>⚠️ No pude generar imágenes ni mapas. Esto puede deberse a un problema de configuración del servidor (ej. falta de API Key).</em></small>`;
+    }
+
+    const placesInfo = placesResult.status === 'fulfilled' ? placesResult.value : [];
+    
+    // --- Step 3: Orchestrate visual and interactive content ---
     let imageUrl: string | null = null;
     const mapLinks: { name: string, url: string }[] = [];
 
     if (placesInfo && placesInfo.length > 0) {
-      const imageUrlPromise = searchImageForPlace(placesInfo[0].name);
+      // Fetch image for the first place found
+      imageUrl = await searchImageForPlace(placesInfo[0].name);
       
+      // Create map links for all found places
       for (const place of placesInfo) {
           const queryParts = [place.name, place.city, place.department, "Colombia"].filter(Boolean);
           const fullQuery = queryParts.join(', ');
           const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullQuery)}`;
           mapLinks.push({ name: place.name, url: mapUrl });
       }
-
-      imageUrl = await imageUrlPromise;
     }
 
     const groundingChunks: GroundingChunk[] = [];
 
-    return { responseText, imageUrl, mapLinks, groundingChunks };
+    // Append the warning message if there was an error
+    return { responseText: responseText + warningMessage, imageUrl, mapLinks, groundingChunks };
 
   } catch (error) {
     console.error('Error in runChat function:', error);
