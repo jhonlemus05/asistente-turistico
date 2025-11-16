@@ -53,44 +53,52 @@ const Chatbot: React.FC = () => {
     setInput('');
     setIsLoading(true);
 
-  try {
-    const { text, places } = await runChat(currentInput, location);
+    try {
+      // Step 1: Get text response and places info from Gemini
+      const { responseText, placesInfo, groundingChunks } = await runChat(currentInput, location);
+      
+      let imageUrl: string | null = null;
+      const mapLinks: { name: string, url: string }[] = [];
 
-    let imageUrl: string | null = null;
-    const mapLinks: { name: string, url: string }[] = [];
-
-    if (places && places.length > 0) {
-      imageUrl = await searchImageForPlace(places[0]);
-
-      for (const placeName of places) {
-          const query = `${placeName}, Colombia`;
-          const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-          mapLinks.push({ name: placeName, url: mapUrl });
+      if (placesInfo && placesInfo.length > 0) {
+        // Step 2: Search for an image for the *first* identified place.
+        imageUrl = await searchImageForPlace(placesInfo[0].name);
+        
+        // Step 3: Create a Google Maps search link for *each* identified place.
+        for (const place of placesInfo) {
+            const queryParts = [place.name];
+            if (place.city) queryParts.push(place.city);
+            if (place.department) queryParts.push(place.department);
+            queryParts.push("Colombia");
+            const fullQuery = queryParts.join(', ');
+            const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullQuery)}`;
+            mapLinks.push({ name: place.name, url: mapUrl });
+        }
       }
+      
+      const modelMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'model',
+        text: responseText,
+        imageUrl: imageUrl ?? undefined,
+        mapLinks: mapLinks.length > 0 ? mapLinks : undefined,
+        groundingChunks: groundingChunks,
+      };
+      setMessages(prev => [...prev, modelMessage]);
+
+    } catch (error) {
+      console.error("Error processing chat:", error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'model',
+        text: 'Lo siento, algo salió mal. Por favor, inténtalo de nuevo más tarde.',
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+        setIsLoading(false);
     }
-
-    const modelMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      role: 'model',
-      text,
-      imageUrl: imageUrl ?? undefined,
-      mapLinks: mapLinks.length > 0 ? mapLinks : undefined,
-    };
-
-    setMessages(prev => [...prev, modelMessage]);
-} 
-catch (error) {
-    console.error("Error processing chat:", error);
-    setMessages(prev => [...prev, {
-      id: (Date.now() + 1).toString(),
-      role: 'model',
-      text: 'Lo siento, algo salió mal. Por favor, inténtalo de nuevo más tarde.',
-    }]);
-} 
-finally {
-    setIsLoading(false);
-}
-
+  };
+  
   const handleChipClick = (text: string) => {
     setInput(text);
     // Directly submit the form
@@ -174,5 +182,5 @@ finally {
     </>
   );
 };
-}
+
 export default Chatbot;
