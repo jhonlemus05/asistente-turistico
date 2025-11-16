@@ -7,7 +7,7 @@ let ai: GoogleGenAI | null = null;
 // Lazy initialization of the Google Gemini AI client
 function getAiClient() {
   if (!ai) {
-    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    ai = new GoogleGenAI({ apiKey: process.env.REACT_APP_API_KEY  });
   }
   return ai;
 }
