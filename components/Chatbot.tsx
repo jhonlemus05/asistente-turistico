@@ -54,27 +54,11 @@ const Chatbot: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Step 1: Get text response and places info from Gemini
-      const { responseText, placesInfo, groundingChunks } = await runChat(currentInput, location);
+      const { responseText, placesInfo, mapLinks } = await runChat(currentInput, location);
       
-      let imageUrl: string | null = null;
-      const mapLinks: { name: string, url: string }[] = [];
-
-      if (placesInfo && placesInfo.length > 0) {
-        // Step 2: Search for an image for the *first* identified place.
-        imageUrl = await searchImageForPlace(placesInfo[0].name);
-        
-        // Step 3: Create a Google Maps search link for *each* identified place.
-        for (const place of placesInfo) {
-            const queryParts = [place.name];
-            if (place.city) queryParts.push(place.city);
-            if (place.department) queryParts.push(place.department);
-            queryParts.push("Colombia");
-            const fullQuery = queryParts.join(', ');
-            const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullQuery)}`;
-            mapLinks.push({ name: place.name, url: mapUrl });
-        }
-      }
+      // The backend now provides an image URL for each place.
+      // We'll use the image of the first place for the main message display.
+      const imageUrl = (placesInfo && placesInfo.length > 0) ? placesInfo[0].imageUrl : undefined;
       
       const modelMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -82,7 +66,9 @@ const Chatbot: React.FC = () => {
         text: responseText,
         imageUrl: imageUrl ?? undefined,
         mapLinks: mapLinks.length > 0 ? mapLinks : undefined,
-        groundingChunks: groundingChunks,
+        // NOTE: groundingChunks is not returned by the new service implementation.
+        // If you need it, you'll have to add it back to geminiService.ts
+        groundingChunks: [], 
       };
       setMessages(prev => [...prev, modelMessage]);
 

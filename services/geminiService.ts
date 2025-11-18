@@ -1,15 +1,13 @@
 import { GroundingChunk } from '../types';
-import { searchImageForPlace } from './imageSearchService';
 
 const BACKEND_ENDPOINT = 'https://gemini-backend-ca0r.onrender.com/api/chat';
 
 export async function runChat(prompt: string, location: { latitude: number; longitude: number } | null) {
   try {
-    // Step 1: Get the structured response from the custom backend
     const backendResponse = await fetch(BACKEND_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: prompt, location }), // Pass location to backend
+      body: JSON.stringify({ message: prompt, location }),
     });
 
     if (!backendResponse.ok) {
@@ -20,16 +18,9 @@ export async function runChat(prompt: string, location: { latitude: number; long
     const { reply, placesInfo } = await backendResponse.json();
     
     const responseText = reply || "No he recibido una respuesta válida de mi servidor.";
-
-    // Step 2: Orchestrate visual and interactive content based on backend data
-    let imageUrl: string | null = null;
     const mapLinks: { name: string, url: string }[] = [];
 
     if (placesInfo && placesInfo.length > 0) {
-      // Fetch image for the first place found
-      imageUrl = await searchImageForPlace(placesInfo[0].name);
-      
-      // Create map links for all found places
       for (const place of placesInfo) {
           const queryParts = [place.name, place.city, place.department, "Colombia"].filter(Boolean);
           const fullQuery = queryParts.join(', ');
@@ -38,17 +29,14 @@ export async function runChat(prompt: string, location: { latitude: number; long
       }
     }
 
-    const groundingChunks: GroundingChunk[] = [];
-
-    return { responseText, imageUrl, mapLinks, groundingChunks };
+    return { responseText, placesInfo: placesInfo || [], mapLinks };
 
   } catch (error) {
     console.error('Error in runChat function:', error);
     return { 
         responseText: `Lo siento, tengo problemas para conectarme con mi servidor. Por favor, asegúrate de que esté en funcionamiento e inténtalo de nuevo. (${error.message})`,
-        imageUrl: null,
+        placesInfo: [],
         mapLinks: [],
-        groundingChunks: []
     };
   }
 }
