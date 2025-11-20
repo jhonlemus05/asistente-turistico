@@ -7,7 +7,7 @@ import Stats from './components/Stats';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 import Chatbot from './components/Chatbot';
-import InteractiveMap from './components/InteractiveMap';
+/* import InteractiveMap from './components/InteractiveMap'; */
 
 const App: React.FC = () => {
   return (
@@ -17,7 +17,7 @@ const App: React.FC = () => {
         <Hero />
         <About />
         <Destinations />
-        <InteractiveMap />
+        {/* <InteractiveMap /> */}
         <Stats />
         <Contact />
       </main>
