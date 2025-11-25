@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 
 const destinations = [
-  { id: 1, url: 'https://picsum.photos/1200/800?image=1018' },
-  { id: 2, url: 'https://picsum.photos/1200/800?image=1025' },
-  { id: 3, url: 'https://picsum.photos/1200/800?image=103' },
+  { id: 1, url: 'https://en.colombiatours.travel/wp-content/uploads/2023/04/ogrunewald_cano_cristales_24_1800x1201.jpg' },
+  { id: 2, url: 'https://colombia.travel/sites/default/files/Cartagena-22-Foto-ProColombia.jpg' },
+  { id: 3, url: 'https://lh3.googleusercontent.com/gpms-cs-s/APRy3c-GSpN9HciPnlCu9wN2ZIA_uKPAbvl28C9avTtZeeYqibPxvpA4H7ecpfWuas_yR-WFx2yasKXuYmx9s5CnKdtLqCYMPgj8DOHE0mofvM5Z1zlxmyuiqRNHUbWx961gXMDiKQ1q=s1360-w1360-h1020-rw' },
 ];
 
 const Destinations: React.FC = () => {

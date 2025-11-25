@@ -25,12 +25,12 @@ const About: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-6 pt-10">
-              <AboutCard imageUrl="https://picsum.photos/400/300?image=2" title="Restaurantes" />
-              <AboutCard imageUrl="https://picsum.photos/400/300?image=3" title="Dónde Alojarse" />
+               <AboutCard imageUrl="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWeQNa_6uT1cyZND-SXc7arhwA31XnW8nJ7pzsJ0fdu96VxHQVdSiPlQDTBMcVEvjbk7AfVd2qkb37laAm6a9nQfQwlX9VvtKEGKwM9jkV&s=10" title="Restaurantes" />
+              <AboutCard imageUrl="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/2f/59/25/75/caption.jpg?w=1200&h=-1&s=1" title="Dónde Alojarse" />
             </div>
             <div className="space-y-6">
-               <AboutCard imageUrl="https://picsum.photos/400/300?image=4" title="Atracciones" description="Vistas inolvidables te esperan." />
-              <AboutCard imageUrl="https://picsum.photos/400/300?image=5" title="Tiendas" />
+                <AboutCard imageUrl="https://jesikamillano.com/wp-content/uploads/2023/09/penol-guatape.png" title="Atracciones" description="Vistas inolvidables te esperan." />
+              <AboutCard imageUrl="https://lanotaeconomica.com.co/wp-content/uploads/elementor/thumbs/arturo-calle-mujers-qcnrj04taun03ndgulsb0p548sy2day34sacosr62k.jpg" title="Tiendas" />
             </div>
           </div>
           <div className="text-center lg:text-left">
